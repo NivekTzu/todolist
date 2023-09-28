@@ -150,6 +150,6 @@ app.get("/:customListName", async (req, res) => {
     console.error("error", error);
   }
 });
-app.listen(3000, function () {
-  console.log("Server started on port 3000");
+app.listen(process.env.PORT  || 3000, function(){
+    console.log("server running port 3000");
 });
