@@ -1,12 +1,11 @@
-//jshint esversion:6
-
+// Import necessary packages and libraries
 const express = require("express");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
 const app = express();
-const _= require("lodash");
+const _ = require("lodash");
 
-//connect to MongoDB
+// Connect to MongoDB Atlas
 async function connectToMongoose() {
   try {
     await mongoose.connect("mongodb+srv://tzufae:1515@cluster0.y4qvlov.mongodb.net/todolist", {
@@ -14,20 +13,24 @@ async function connectToMongoose() {
       useUnifiedTopology: true,
     });
 
-    console.log("success");
+    console.log("MongoDB Atlas connection successful");
   } catch (error) {
-    console.error("didnt work", error);
+    console.error("MongoDB Atlas connection failed:", error);
   }
 }
 
+// Export the connection function
 module.exports = connectToMongoose;
 
+// Define a schema for the "Item" collection in MongoDB
 const ItemSchema = new mongoose.Schema({
   name: String,
 });
 
+// Create a model based on the ItemSchema
 const Item = mongoose.model("Item", ItemSchema);
 
+// Define some default items
 const item1 = new Item({
   name: "Brush Teeth",
 });
@@ -40,15 +43,19 @@ const item3 = new Item({
   name: "Read book",
 });
 
+// Store default items in an array
 const defaultItems = [item1, item2, item3];
 
+// Define a schema for the "List" collection in MongoDB
 const listSchema = {
   name: String,
   items: [ItemSchema],
 };
+
+// Create a model based on the listSchema
 const List = mongoose.model("List", listSchema);
 
-
+// Function to insert default items into the database
 async function insertDefaultItems() {
   try {
     await Item.insertMany(defaultItems);
@@ -57,20 +64,27 @@ async function insertDefaultItems() {
     console.error("Error inserting default items:", err);
   }
 }
+
+// Function to start the application, including database connection
 async function startApp() {
   try {
     await connectToMongoose();
   } catch (error) {
-    console.error("connection to Mongo failed:", error);
+    console.error("Connection to MongoDB failed:", error);
   }
 }
+
+// Call the function to start the application
 startApp();
 
+// Configure the view engine to use EJS
 app.set("view engine", "ejs");
 
+// Configure the app to use middleware for parsing requests
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static("public"));
 
+// Define a route to handle the root URL ("/")
 app.get("/", async (req, res) => {
   try {
     const allItems = await Item.find({});
@@ -81,10 +95,11 @@ app.get("/", async (req, res) => {
       res.render("list", { listTitle: "today", newListItems: allItems });
     }
   } catch (error) {
-    console.error("error finding all Items", error);
+    console.error("Error finding all items:", error);
   }
 });
 
+// Define a route to handle POST requests (for adding items)
 app.post("/", async (req, res) => {
   try {
     const itemName = req.body.newItem;
@@ -106,10 +121,11 @@ app.post("/", async (req, res) => {
       }
     }
   } catch (error) {
-    console.error("error posting", error);
+    console.error("Error handling POST request:", error);
   }
 });
 
+// Define a route to handle item deletion
 app.post("/delete", async (req, res) => {
   try {
     const checkedItemId = req.body.checkbox;
@@ -125,13 +141,14 @@ app.post("/delete", async (req, res) => {
       res.redirect("/" + listName);
     }
   } catch (error) {
-    console.error("error", error);
+    console.error("Error handling item deletion:", error);
   }
 });
 
+// Define a route to handle custom lists
 app.get("/:customListName", async (req, res) => {
   try {
-    const customListName  = _.capitalize(req.params.customListName);
+    const customListName = _.capitalize(req.params.customListName);
     const foundList = await List.findOne({ name: customListName });
     if (foundList === null) {
       const list = new List({
@@ -147,9 +164,11 @@ app.get("/:customListName", async (req, res) => {
       });
     }
   } catch (error) {
-    console.error("error", error);
+    console.error("Error handling custom list:", error);
   }
 });
-app.listen(process.env.PORT  || 3000, function(){
-    console.log("server running port 3000");
+
+// Start the server on the specified port (3000 or the one provided by the environment)
+app.listen(process.env.PORT || 3000, function () {
+  console.log("Server is running on port 3000");
 });
